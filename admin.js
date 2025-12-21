@@ -19,14 +19,33 @@ window.onload = () => {
     }
     document.getElementById('apiUrl').value = config.apiUrl;
     document.getElementById('adminKey').value = config.adminKey;
-    loadDashboard();
+    
+    // 根据 URL hash 恢复页面状态
+    const hash = window.location.hash.replace('#', '') || 'dashboard';
+    const validPages = ['dashboard', 'licenses', 'devices', 'review', 'logs', 'settings'];
+    const pageName = validPages.includes(hash) ? hash : 'dashboard';
+    showPageByName(pageName);
 };
 
-// 切换页面
-function showPage(pageName) {
+// 监听浏览器前进后退
+window.onhashchange = () => {
+    const hash = window.location.hash.replace('#', '') || 'dashboard';
+    const validPages = ['dashboard', 'licenses', 'devices', 'review', 'logs', 'settings'];
+    if (validPages.includes(hash)) {
+        showPageByName(hash);
+    }
+};
+
+// 内部切换页面（不触发 hashchange）
+function showPageByName(pageName) {
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
     document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-    event.target.closest('.nav-item').classList.add('active');
+    
+    // 激活对应的导航项
+    const navItem = document.querySelector(`.nav-item[href="#${pageName}"]`) || 
+                    document.querySelector(`.nav-item[onclick*="'${pageName}'"]`);
+    if (navItem) navItem.classList.add('active');
+    
     document.getElementById(pageName).classList.add('active');
 
     const titles = {
@@ -39,10 +58,18 @@ function showPage(pageName) {
     };
     document.getElementById('pageTitle').textContent = titles[pageName];
 
+    // 加载页面数据
     if (pageName === 'dashboard') loadDashboard();
     if (pageName === 'licenses') loadAllLicenses();
     if (pageName === 'review') { loadPendingIPs(); loadApprovedIPs(); loadRejectedIPs(); }
     if (pageName === 'logs') loadLogs();
+}
+
+// 切换页面（用户点击导航时调用）
+function showPage(pageName) {
+    // 更新 URL hash（会触发 hashchange，但我们直接处理）
+    window.location.hash = pageName;
+    showPageByName(pageName);
 }
 
 // 刷新当前页面
@@ -1156,12 +1183,14 @@ function displayPendingIPs(list) {
         return;
     }
 
-    let html = '<table><thead><tr><th>IP 地址</th><th>设备 ID</th><th>激活时间</th><th>最后活跃</th><th>任务次数</th><th>剩余时间</th><th>操作</th></tr></thead><tbody>';
+    let html = '<table><thead><tr><th>IP 地址</th><th>设备 ID</th><th>激活时间</th><th>最后活跃</th><th>任务次数</th><th>剩余时间</th><th>类型</th><th>操作</th></tr></thead><tbody>';
     list.forEach(item => {
-        const taskInfo = `${item.taskCount || 0} / 10`;
-        const taskBadge = (item.taskCount || 0) >= 10 ? 'badge-danger' : 'badge-info';
-        // 显示设备ID前8位，鼠标悬停显示完整ID
+        const taskCount = item.taskCount || 0;
+        const maxTasks = item.maxTasks || 10;
+        const taskInfo = `${taskCount} / ${maxTasks}`;
+        const taskBadge = taskCount >= maxTasks ? 'badge-danger' : 'badge-info';
         const deviceIdShort = item.machineIdFull ? item.machineIdFull.substring(0, 8) + '...' : '-';
+        const licenseType = item.licenseType || '临时密钥';
         html += `<tr>
             <td><span class="code">${item.ip}</span></td>
             <td><span class="code" title="${item.machineIdFull || ''}">${deviceIdShort}</span></td>
@@ -1169,6 +1198,7 @@ function displayPendingIPs(list) {
             <td>${item.lastSeen || '-'}</td>
             <td><span class="badge ${taskBadge}">${taskInfo}</span></td>
             <td><span class="badge badge-warning">${item.remaining}</span></td>
+            <td><span class="badge badge-secondary">${licenseType}</span></td>
             <td>
                 <button class="btn btn-success btn-sm" onclick="approveIPAction('${item.ip}')">✅ 通过</button>
                 <button class="btn btn-danger btn-sm" onclick="rejectIPAction('${item.ip}')">❌ 拒绝</button>
