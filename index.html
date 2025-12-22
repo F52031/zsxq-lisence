@@ -14,7 +14,8 @@
         <div class="login-box">
             <h2>🔐 管理后台登录</h2>
             <div class="login-form">
-                <input type="password" id="loginPassword" class="form-control" placeholder="请输入管理密码" onkeypress="if(event.key==='Enter')doLogin()">
+                <input type="password" id="loginPassword" class="form-control" placeholder="请输入管理密码"
+                    onkeypress="if(event.key==='Enter')doLogin()">
                 <button class="btn btn-primary" onclick="doLogin()">登录</button>
             </div>
             <p id="loginError" class="login-error"></p>
@@ -50,6 +51,10 @@
             <a href="#settings" class="nav-item" onclick="showPage('settings')">
                 <span class="icon">⚙️</span>
                 <span>系统设置</span>
+            </a>
+            <a href="#debug" class="nav-item" onclick="showPage('debug')">
+                <span class="icon">🔍</span>
+                <span>密钥调试</span>
             </a>
         </nav>
     </div>
@@ -262,6 +267,124 @@
                     <div class="form-row">
                         <button class="btn" onclick="exportAllData()">📥 导出数据</button>
                         <button class="btn" onclick="showImportDialog()">📤 导入数据</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 密钥调试 -->
+        <div id="debug" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <h3>⚙️ 配置</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>API 地址</label>
+                        <input type="text" id="debugApiUrl" class="form-control"
+                            value="https://1340181402-3thvnndcwl.ap-guangzhou.tencentscf.com">
+                    </div>
+                    <div class="form-group">
+                        <label>管理员密钥</label>
+                        <input type="text" id="debugAdminKey" class="form-control" value="ADMIN-KEY-2025">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>🧪 密钥验证测试（随机 IP 和设备ID）</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>测试密钥</label>
+                        <input type="text" id="debugTestLicense" class="form-control"
+                            placeholder="输入密钥，如: ZSXQ-TEMP-2025 或 ZSXQ-8888-0001">
+                    </div>
+                    <div id="debugTestInfo" class="test-info"
+                        style="display: none; background: #e2e3e5; padding: 10px; border-radius: 4px; margin: 10px 0;">
+                        <span style="margin-right: 20px;">🌐 <strong>测试IP:</strong> <span
+                                id="debugCurrentIP">-</span></span>
+                        <span>🖥️ <strong>设备ID:</strong> <span id="debugCurrentDevice">-</span></span>
+                    </div>
+                    <div class="form-row" style="margin-top: 15px;">
+                        <button class="btn btn-success" onclick="debugTestValidate()">🔐 测试激活</button>
+                        <button class="btn btn-success" onclick="debugTestStartTask()">▶️ 测试开始任务</button>
+                        <button class="btn btn-primary" onclick="debugTestBoth()">🚀 同时测试</button>
+                        <button class="btn" onclick="debugRegenerateTestData()">🔄 重新生成随机数据</button>
+                    </div>
+                    <div id="debugTestResult" class="debug-result"
+                        style="display:none; background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 15px; white-space: pre-wrap; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid #28a745;">
+                <div class="card-header">
+                    <h3>🔄 存量用户测试（模拟重装插件）</h3>
+                </div>
+                <div class="card-body">
+                    <p class="hint">测试已有激活记录的用户，使用任意密钥是否能直接通过验证</p>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>选择存量IP</label>
+                            <select id="debugExistingIP" class="form-control">
+                                <option value="">-- 点击加载按钮 --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>选择存量设备ID</label>
+                            <select id="debugExistingDevice" class="form-control">
+                                <option value="">-- 点击加载按钮 --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>测试密钥（可以输入任意值）</label>
+                        <input type="text" id="debugExistingTestLicense" class="form-control" value="ZSXQ-RANDOM-TEST"
+                            placeholder="输入任意密钥测试">
+                    </div>
+                    <div class="form-row">
+                        <button class="btn" onclick="debugLoadExistingData()">🔄 加载存量数据</button>
+                        <button class="btn btn-success" onclick="debugTestExistingIP()">🌐 测试存量IP（激活）</button>
+                        <button class="btn btn-success" onclick="debugTestExistingIPStartTask()">🌐 测试存量IP（任务）</button>
+                        <button class="btn btn-success" onclick="debugTestExistingDevice()">🖥️ 测试存量设备（激活）</button>
+                        <button class="btn btn-success" onclick="debugTestExistingDeviceStartTask()">🖥️
+                            测试存量设备（任务）</button>
+                        <button class="btn btn-primary" onclick="debugTestExistingBoth()">🚀 综合测试</button>
+                    </div>
+                    <div id="debugExistingResult" class="debug-result"
+                        style="display:none; background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 15px; white-space: pre-wrap; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>📋 查看待审核列表</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <button class="btn" onclick="debugListPendingIPs()">🔄 刷新列表</button>
+                        <button class="btn" onclick="debugAnalyzePendingIPs()">📊 分析问题</button>
+                    </div>
+                    <div id="debugPendingResult" class="debug-result"
+                        style="display:none; background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 15px; white-space: pre-wrap; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto;">
+                    </div>
+                    <div id="debugAnalysisResult" class="debug-result"
+                        style="display:none; background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 15px; white-space: pre-wrap; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>📜 查看日志</h3>
+                </div>
+                <div class="card-body">
+                    <button class="btn" onclick="debugGetLogs()">查看最近50条日志</button>
+                    <div id="debugLogsResult" class="debug-result"
+                        style="display:none; background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 15px; white-space: pre-wrap; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto;">
                     </div>
                 </div>
             </div>
