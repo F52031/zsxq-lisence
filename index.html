@@ -40,6 +40,14 @@
                 <span class="icon">📱</span>
                 <span>设备管理</span>
             </a>
+            <a href="#ipManage" class="nav-item" onclick="showPage('ipManage')">
+                <span class="icon">🌐</span>
+                <span>IP 管理</span>
+            </a>
+            <a href="#deviceOverview" class="nav-item" onclick="showPage('deviceOverview')">
+                <span class="icon">🖥️</span>
+                <span>设备总览</span>
+            </a>
             <a href="#review" class="nav-item" onclick="showPage('review')">
                 <span class="icon">✅</span>
                 <span>激活审核</span>
@@ -174,6 +182,44 @@
                 </div>
             </div>
             <div id="devicesResult"></div>
+        </div>
+
+        <!-- IP 管理 -->
+        <div id="ipManage" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <h3>🌐 所有 IP 地址</h3>
+                    <div class="card-actions">
+                        <input type="text" id="ipSearchKeyword" class="form-control" placeholder="搜索 IP 地址"
+                            style="width: 200px;">
+                        <button class="btn" onclick="searchIPs()">🔍 搜索</button>
+                        <button class="btn" onclick="loadAllIPs()">🔄 刷新</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="stats-grid" id="ipStatsGrid" style="margin-bottom: 20px;"></div>
+                    <div id="allIPsContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设备总览 -->
+        <div id="deviceOverview" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <h3>🖥️ 所有设备</h3>
+                    <div class="card-actions">
+                        <input type="text" id="deviceSearchKeyword" class="form-control" placeholder="搜索设备 ID"
+                            style="width: 200px;">
+                        <button class="btn" onclick="searchDevicesGlobal()">🔍 搜索</button>
+                        <button class="btn" onclick="loadAllDevices()">🔄 刷新</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="stats-grid" id="deviceStatsGrid" style="margin-bottom: 20px;"></div>
+                    <div id="allDevicesContainer"></div>
+                </div>
+            </div>
         </div>
 
         <!-- 激活审核 -->
