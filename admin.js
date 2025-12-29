@@ -1429,25 +1429,37 @@ async function setIPWhitelistFromList(license, currentEnabled) {
 
 // ==================== 激活审核功能 ====================
 
+let currentPendingPage = 1;
+let currentApprovedPage = 1;
+let currentRejectedPage = 1;
+const reviewPageSize = 20;
+
 // 加载待审核 IP 列表
-async function loadPendingIPs() {
+async function loadPendingIPs(page = 1) {
+    currentPendingPage = page;
     const result = await apiRequest('listPendingIPs', {});
     if (result.success) {
-        displayPendingIPs(result.data);
+        displayPendingIPs(result.data, page);
     } else {
         document.getElementById('pendingIPsContainer').innerHTML = '<div class="loading">加载失败</div>';
     }
 }
 
 // 显示待审核 IP
-function displayPendingIPs(list) {
+function displayPendingIPs(list, page = 1) {
     if (!list || list.length === 0) {
         document.getElementById('pendingIPsContainer').innerHTML = '<div class="loading">暂无待审核的激活请求</div>';
         return;
     }
 
+    // 分页
+    const total = list.length;
+    const start = (page - 1) * reviewPageSize;
+    const end = start + reviewPageSize;
+    const pageData = list.slice(start, end);
+
     let html = '<table><thead><tr><th>IP 地址</th><th>设备 ID</th><th>激活时间</th><th>最后活跃</th><th>任务次数</th><th>剩余时间</th><th>类型</th><th>订单号</th><th>操作</th></tr></thead><tbody>';
-    list.forEach(item => {
+    pageData.forEach(item => {
         const taskCount = item.taskCount || 0;
         const maxTasks = item.maxTasks || 10;
         const taskInfo = `${taskCount} / ${maxTasks}`;
@@ -1471,6 +1483,23 @@ function displayPendingIPs(list) {
         </tr>`;
     });
     html += '</tbody></table>';
+    
+    // 分页控件
+    const totalPages = Math.ceil(total / reviewPageSize);
+    if (totalPages > 1) {
+        html += '<div class="pagination" style="margin-top: 20px;">';
+        if (page > 1) {
+            html += `<button class="btn btn-sm" onclick="loadPendingIPs(${page - 1})">上一页</button>`;
+        }
+        html += `<span>第 ${page} / ${totalPages} 页 (共 ${total} 个)</span>`;
+        if (page < totalPages) {
+            html += `<button class="btn btn-sm" onclick="loadPendingIPs(${page + 1})">下一页</button>`;
+        }
+        html += '</div>';
+    } else {
+        html += `<div class="hint" style="margin-top: 10px;">共 ${total} 个待审核 IP</div>`;
+    }
+    
     document.getElementById('pendingIPsContainer').innerHTML = html;
 }
 
@@ -1502,19 +1531,20 @@ async function rejectIPAction(ip) {
 }
 
 // 加载已通过 IP 列表
-async function loadApprovedIPs() {
+async function loadApprovedIPs(page = 1) {
+    currentApprovedPage = page;
     const result = await apiRequest('listApprovedIPs', {});
     console.log('loadApprovedIPs result:', result); // 调试信息
     if (result.success) {
         console.log('Approved IPs data:', result.data); // 调试信息
-        displayApprovedIPs(result.data);
+        displayApprovedIPs(result.data, page);
     } else {
         document.getElementById('approvedIPsContainer').innerHTML = '<div class="loading">加载失败</div>';
     }
 }
 
 // 显示已通过 IP
-function displayApprovedIPs(list) {
+function displayApprovedIPs(list, page = 1) {
     if (!list || list.length === 0) {
         document.getElementById('approvedIPsContainer').innerHTML = '<div class="loading">暂无已通过的 IP</div>';
         return;
@@ -1524,8 +1554,14 @@ function displayApprovedIPs(list) {
     console.log('displayApprovedIPs - 第一条数据:', list[0]);
     console.log('displayApprovedIPs - 第一条数据类型:', typeof list[0]);
 
+    // 分页
+    const total = list.length;
+    const start = (page - 1) * reviewPageSize;
+    const end = start + reviewPageSize;
+    const pageData = list.slice(start, end);
+
     let html = '<table><thead><tr><th>IP 地址</th><th>设备 ID</th><th>通过时间</th><th>最近操作</th><th>操作</th></tr></thead><tbody>';
-    list.forEach((item, index) => {
+    pageData.forEach((item, index) => {
         // 兼容旧格式（字符串）和新格式（对象）
         const ip = typeof item === 'string' ? item : (item.ip || '');
         const machineId = typeof item === 'object' ? (item.machineId || '') : '';
@@ -1550,7 +1586,23 @@ function displayApprovedIPs(list) {
         </tr>`;
     });
     html += '</tbody></table>';
-    html += `<div class="hint" style="margin-top: 10px;">共 ${list.length} 个已授权 IP</div>`;
+    
+    // 分页控件
+    const totalPages = Math.ceil(total / reviewPageSize);
+    if (totalPages > 1) {
+        html += '<div class="pagination" style="margin-top: 20px;">';
+        if (page > 1) {
+            html += `<button class="btn btn-sm" onclick="loadApprovedIPs(${page - 1})">上一页</button>`;
+        }
+        html += `<span>第 ${page} / ${totalPages} 页 (共 ${total} 个)</span>`;
+        if (page < totalPages) {
+            html += `<button class="btn btn-sm" onclick="loadApprovedIPs(${page + 1})">下一页</button>`;
+        }
+        html += '</div>';
+    } else {
+        html += `<div class="hint" style="margin-top: 10px;">共 ${total} 个已授权 IP</div>`;
+    }
+    
     document.getElementById('approvedIPsContainer').innerHTML = html;
 }
 
@@ -1569,24 +1621,31 @@ async function removeApprovedIPAction(ip) {
 
 
 // 加载被拒绝 IP 列表
-async function loadRejectedIPs() {
+async function loadRejectedIPs(page = 1) {
+    currentRejectedPage = page;
     const result = await apiRequest('listRejectedIPs', {});
     if (result.success) {
-        displayRejectedIPs(result.data);
+        displayRejectedIPs(result.data, page);
     } else {
         document.getElementById('rejectedIPsContainer').innerHTML = '<div class="loading">加载失败</div>';
     }
 }
 
 // 显示被拒绝 IP
-function displayRejectedIPs(list) {
+function displayRejectedIPs(list, page = 1) {
     if (!list || list.length === 0) {
         document.getElementById('rejectedIPsContainer').innerHTML = '<div class="loading">暂无被拒绝的 IP</div>';
         return;
     }
 
+    // 分页
+    const total = list.length;
+    const start = (page - 1) * reviewPageSize;
+    const end = start + reviewPageSize;
+    const pageData = list.slice(start, end);
+
     let html = '<table><thead><tr><th>IP 地址</th><th>操作</th></tr></thead><tbody>';
-    list.forEach(ip => {
+    pageData.forEach(ip => {
         html += `<tr>
             <td><span class="code">${ip}</span></td>
             <td>
@@ -1595,7 +1654,23 @@ function displayRejectedIPs(list) {
         </tr>`;
     });
     html += '</tbody></table>';
-    html += `<div class="hint" style="margin-top: 10px;">共 ${list.length} 个被拒绝 IP</div>`;
+    
+    // 分页控件
+    const totalPages = Math.ceil(total / reviewPageSize);
+    if (totalPages > 1) {
+        html += '<div class="pagination" style="margin-top: 20px;">';
+        if (page > 1) {
+            html += `<button class="btn btn-sm" onclick="loadRejectedIPs(${page - 1})">上一页</button>`;
+        }
+        html += `<span>第 ${page} / ${totalPages} 页 (共 ${total} 个)</span>`;
+        if (page < totalPages) {
+            html += `<button class="btn btn-sm" onclick="loadRejectedIPs(${page + 1})">下一页</button>`;
+        }
+        html += '</div>';
+    } else {
+        html += `<div class="hint" style="margin-top: 10px;">共 ${total} 个被拒绝 IP</div>`;
+    }
+    
     document.getElementById('rejectedIPsContainer').innerHTML = html;
 }
 
@@ -2167,9 +2242,12 @@ async function debugGetLogs() {
 
 // 缓存所有 IP 数据
 let allIPsCache = [];
+let currentIPPage = 1;
+const ipPageSize = 20;
 
 // 加载所有 IP
-async function loadAllIPs() {
+async function loadAllIPs(page = 1) {
+    currentIPPage = page;
     document.getElementById('allIPsContainer').innerHTML = '<div class="loading">正在加载...</div>';
 
     // 并行加载三个列表
@@ -2255,7 +2333,7 @@ async function loadAllIPs() {
     });
 
     displayIPStats();
-    displayAllIPsList(allIPsCache);
+    displayAllIPsList(allIPsCache, page);
 }
 
 // 显示 IP 统计
@@ -2285,15 +2363,21 @@ function displayIPStats() {
 }
 
 // 显示 IP 列表
-function displayAllIPsList(list) {
+function displayAllIPsList(list, page = 1) {
     if (!list || list.length === 0) {
         document.getElementById('allIPsContainer').innerHTML = '<div class="loading">暂无 IP 数据</div>';
         return;
     }
 
+    // 分页
+    const total = list.length;
+    const start = (page - 1) * ipPageSize;
+    const end = start + ipPageSize;
+    const pageData = list.slice(start, end);
+
     let html = '<table><thead><tr><th>IP 地址</th><th>备注</th><th>状态</th><th>设备 ID</th><th>激活时间</th><th>最后活跃</th><th>任务次数</th><th>操作</th></tr></thead><tbody>';
 
-    list.forEach(item => {
+    pageData.forEach(item => {
         const statusBadge = item.status === 'approved' ? 'badge-success' :
             item.status === 'pending' ? 'badge-warning' : 'badge-danger';
         const machineIdDisplay = item.machineId && item.machineId !== '-' ?
@@ -2325,7 +2409,23 @@ function displayAllIPsList(list) {
     });
 
     html += '</tbody></table>';
-    html += `<div class="hint" style="margin-top: 10px;">共 ${list.length} 个 IP 地址</div>`;
+    
+    // 分页控件
+    const totalPages = Math.ceil(total / ipPageSize);
+    if (totalPages > 1) {
+        html += '<div class="pagination" style="margin-top: 20px;">';
+        if (page > 1) {
+            html += `<button class="btn btn-sm" onclick="loadAllIPs(${page - 1})">上一页</button>`;
+        }
+        html += `<span>第 ${page} / ${totalPages} 页 (共 ${total} 个 IP)</span>`;
+        if (page < totalPages) {
+            html += `<button class="btn btn-sm" onclick="loadAllIPs(${page + 1})">下一页</button>`;
+        }
+        html += '</div>';
+    } else {
+        html += `<div class="hint" style="margin-top: 10px;">共 ${total} 个 IP 地址</div>`;
+    }
+    
     document.getElementById('allIPsContainer').innerHTML = html;
 }
 
@@ -2334,7 +2434,8 @@ function searchIPs() {
     const keyword = document.getElementById('ipSearchKeyword').value.trim().toLowerCase();
 
     if (!keyword) {
-        displayAllIPsList(allIPsCache);
+        displayAllIPsList(allIPsCache, 1);
+        currentIPPage = 1;
         return;
     }
 
@@ -2344,7 +2445,8 @@ function searchIPs() {
         (item.note && item.note.toLowerCase().includes(keyword))
     );
 
-    displayAllIPsList(filtered);
+    currentIPPage = 1;
+    displayAllIPsList(filtered, 1);
 }
 
 // 编辑 IP 备注
@@ -2361,7 +2463,7 @@ async function editIPNote(ip, currentNote) {
         // 更新全局用户数据缓存
         const globalInfo = globalUserData.ipToInfo.get(ip);
         if (globalInfo) globalInfo.userName = note;
-        displayAllIPsList(allIPsCache);
+        displayAllIPsList(allIPsCache, currentIPPage);
     } else {
         showMessage(result.error || '更新失败', 'error');
     }
@@ -2371,9 +2473,12 @@ async function editIPNote(ip, currentNote) {
 
 // 缓存所有设备数据
 let allDevicesCache = [];
+let currentDevicePage = 1;
+const devicePageSize = 20;
 
 // 加载所有设备
-async function loadAllDevices() {
+async function loadAllDevices(page = 1) {
+    currentDevicePage = page;
     document.getElementById('allDevicesContainer').innerHTML = '<div class="loading">正在加载...</div>';
 
     // 并行加载待审核和已通过列表来提取设备信息
@@ -2476,7 +2581,7 @@ async function loadAllDevices() {
 
     allDevicesCache = Array.from(deviceMap.values());
     displayDeviceStats();
-    displayAllDevicesList(allDevicesCache);
+    displayAllDevicesList(allDevicesCache, page);
 }
 
 // 显示设备统计
@@ -2506,15 +2611,21 @@ function displayDeviceStats() {
 }
 
 // 显示设备列表
-function displayAllDevicesList(list) {
+function displayAllDevicesList(list, page = 1) {
     if (!list || list.length === 0) {
         document.getElementById('allDevicesContainer').innerHTML = '<div class="loading">暂无设备数据</div>';
         return;
     }
 
+    // 分页
+    const total = list.length;
+    const start = (page - 1) * devicePageSize;
+    const end = start + devicePageSize;
+    const pageData = list.slice(start, end);
+
     let html = '<table><thead><tr><th>设备 ID</th><th>状态</th><th>关联 IP</th><th>关联密钥</th><th>首次使用</th><th>最后使用</th><th>操作</th></tr></thead><tbody>';
 
-    list.forEach(item => {
+    pageData.forEach(item => {
         const statusBadge = item.status === 'approved' || item.status === 'active' ? 'badge-success' :
             item.status === 'pending' ? 'badge-warning' : 'badge-danger';
         const machineIdDisplay = item.machineId.substring(0, 12) + '...';
@@ -2545,7 +2656,23 @@ function displayAllDevicesList(list) {
     });
 
     html += '</tbody></table>';
-    html += `<div class="hint" style="margin-top: 10px;">共 ${list.length} 个设备</div>`;
+    
+    // 分页控件
+    const totalPages = Math.ceil(total / devicePageSize);
+    if (totalPages > 1) {
+        html += '<div class="pagination" style="margin-top: 20px;">';
+        if (page > 1) {
+            html += `<button class="btn btn-sm" onclick="loadAllDevices(${page - 1})">上一页</button>`;
+        }
+        html += `<span>第 ${page} / ${totalPages} 页 (共 ${total} 个设备)</span>`;
+        if (page < totalPages) {
+            html += `<button class="btn btn-sm" onclick="loadAllDevices(${page + 1})">下一页</button>`;
+        }
+        html += '</div>';
+    } else {
+        html += `<div class="hint" style="margin-top: 10px;">共 ${total} 个设备</div>`;
+    }
+    
     document.getElementById('allDevicesContainer').innerHTML = html;
 }
 
@@ -2554,7 +2681,8 @@ function searchDevicesGlobal() {
     const keyword = document.getElementById('deviceSearchKeyword').value.trim().toLowerCase();
 
     if (!keyword) {
-        displayAllDevicesList(allDevicesCache);
+        displayAllDevicesList(allDevicesCache, 1);
+        currentDevicePage = 1;
         return;
     }
 
@@ -2564,7 +2692,8 @@ function searchDevicesGlobal() {
         item.licenses.some(lic => lic.toLowerCase().includes(keyword))
     );
 
-    displayAllDevicesList(filtered);
+    currentDevicePage = 1;
+    displayAllDevicesList(filtered, 1);
 }
 
 // 全局封禁设备
