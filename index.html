@@ -271,9 +271,18 @@
             <div class="card">
                 <div class="card-header">
                     <h3>操作日志</h3>
-                    <button class="btn" onclick="loadLogs()">🔄 刷新</button>
+                    <div class="card-actions">
+                        <input type="text" id="ipSearchInput" class="form-control" placeholder="输入 IP 地址搜索"
+                            style="width: 250px;" onkeypress="if(event.key==='Enter')searchLogsByIP()">
+                        <button class="btn btn-primary" onclick="searchLogsByIP()">🔍 搜索 IP</button>
+                        <button class="btn" onclick="clearIPSearch()">✖️ 清除</button>
+                        <button class="btn" onclick="loadLogs()">🔄 刷新</button>
+                    </div>
                 </div>
                 <div class="card-body">
+                    <div id="logsSearchInfo" style="display: none; padding: 10px; margin-bottom: 15px; background: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+                        <span id="logsSearchText"></span>
+                    </div>
                     <div id="logsContainer"></div>
                     <div id="logsPagination"></div>
                 </div>
@@ -313,6 +322,47 @@
                     <div class="form-row">
                         <button class="btn" onclick="exportAllData()">📥 导出数据</button>
                         <button class="btn" onclick="showImportDialog()">📤 导入数据</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>🚀 版本管理</h3>
+                    <div class="card-actions">
+                        <button class="btn" onclick="checkCurrentVersion()">🔄 刷新</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>当前最新版本</label>
+                        <div id="currentVersionDisplay"
+                            style="padding: 10px; background: #f8f9fa; border-radius: 4px; border: 1px solid #e9ecef; margin-bottom: 20px;">
+                            加载中...
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px;">
+                        <h4 style="margin-bottom: 15px;">发布新版本</h4>
+                        <div class="form-group">
+                            <label>版本号 (如 1.0.1)</label>
+                            <input type="text" id="newVersionInput" class="form-control" placeholder="1.0.0">
+                        </div>
+                        <div class="form-group">
+                            <label>下载链接</label>
+                            <input type="text" id="newDownloadUrlInput" class="form-control" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label>更新说明</label>
+                            <textarea id="newUpdateNotesInput" class="form-control" rows="4"
+                                placeholder="请输入更新内容..."></textarea>
+                        </div>
+                        <button class="btn btn-primary" onclick="publishNewVersion()">📤 发布新版本</button>
+                    </div>
+
+                    <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px;">
+                        <h4 style="margin-bottom: 15px;">📜 历史版本记录</h4>
+                        <div id="versionHistoryContainer">加载中...</div>
                     </div>
                 </div>
             </div>
